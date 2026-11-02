@@ -1,0 +1,41 @@
+Módulo 1: Chat de Alinhamento de Memória e Endianness (Foco na Questão 1)
+Abra um chat novo com a IA e cole o comando abaixo:
+
+Prompt inicial para o Chat 1:
+"Quero estudar alinhamento de structs em C, padding e representação little-endian para uma prova de arquitetura de computadores/software básico. Por favor, atue como meu tutor. Comece me explicando de forma simples as regras de alinhamento para tipos básicos (char, short, int, float, double, ponteiros) e como o padding é inserido. Depois, me dê um exemplo prático de struct para eu resolver e testar se entendi."
+
+O que você vai treinar neste chat:
+
+Calcular o tamanho de structs considerando o maior alinhamento.
+
+Entender onde entram os bytes de preenchimento (PP).
+
+Mapear valores em formato little-endian byte a byte na memória (inclusive conversão básica para hexadecimal).
+
+Módulo 2: Chat de Tradução C para Assembly (Foco na Questão 2)
+Abra um segundo chat novo e cole o comando abaixo:
+
+Prompt inicial para o Chat 2:
+"Vou treinar a tradução de códigos em C para Assembly x86-64 (seguindo a convenção System V AMD64 do Linux). Quero que você me ajude passo a passo. Primeiro, me lembre quais são os registradores usados para passar os primeiros argumentos de funções e onde fica o valor de retorno. Depois, me explique como traduzir loops (for), chamadas de funções externas e acesso a vetores (v[i]). Vamos fazer isso um bloco de código por vez."
+
+O que você vai treinar neste chat:
+
+Uso correto de %rdi, %rsi, %rdx, etc.
+
+Construção de prólogo e epílogo (push %rbp, mov %rsp, %rbp, etc.).
+
+Tradução de estruturas de controle (for) e chamadas de outras funções (call).
+
+Módulo 3: Chat de Disassembly e Cálculo de Call Relativo (Foco na Questão 3)
+Abra um terceiro chat novo e cole o comando abaixo:
+
+Prompt inicial para o Chat 3:
+"Preciso entender como o objdump funciona em Assembly x86-64, especificamente como calcular o endereço de destino de uma instrução call relativa (0xe8) usando o offset e o endereço da instrução seguinte. Me explique a fórmula matemática e faça um exercício prático comigo para eu calcular os bytes ausentes (??) em hexadecimal."
+
+O que você vai treinar neste chat:
+
+Aprender a regra de que o offset do call é somado ao endereço da próxima instrução.
+
+Entender como lidar com endereçamentos relativos ao ponteiro de instrução (%rip).
+
+Preencher lacunas de código de máquina em formato little-endian.
