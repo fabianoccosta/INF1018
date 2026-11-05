@@ -1,7 +1,5 @@
-// Nome: Gabriel Lourenço de Mello 
-// Matricula:
-// Nome: Fabiano Carvalho Costa Júnior 
-// Matricula: 2520144
+/* Fabiano Carvalho Costa Júnior 2520144 3WA */
+/* Nome_do_Aluno2 Matricula Turma */
 
 #include <stdio.h>
 #include <stdlib.h>
