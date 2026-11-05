@@ -1,5 +1,7 @@
-/* Nome_do_Aluno1 Matricula Turma */
-/* Nome_do_Aluno2 Matricula Turma */
+// Nome: Gabriel Lourenço de Mello 
+// Matricula:
+// Nome: Fabiano Carvalho Costa Júnior 
+// Matricula: 2520144
 
 #include <stdio.h>
 #include <stdlib.h>
