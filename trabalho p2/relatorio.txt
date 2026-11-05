@@ -1,0 +1,95 @@
+INF1018 - Software Basico (2026.2) - Trabalho: Gerador de Codigo com Funcoes
+
+Integrantes:
+Nome_do_Aluno1 Matricula Turma
+Nome_do_Aluno2 Matricula Turma
+
+1. O que esta funcionando
+-------------------------
+Todas as instrucoes da linguagem LBS foram implementadas e testadas:
+- atribuicao com operacoes aritmeticas (+, -, *) entre variaveis locais
+  (v0..v4), o parametro p0 e constantes (com sinal opcional);
+- ret e zret (retorno incondicional e condicional);
+- call, inclusive recursiva (a funcao chama a si mesma) e entre funcoes
+  do mesmo arquivo (funcoes anteriores).
+
+Decisoes de implementacao:
+- Prologo: push %rbp; mov %rsp,%rbp; sub $32,%rsp (pilha alinhada em 16
+  bytes). As variaveis locais ficam na pilha em -4(%rbp) ... -20(%rbp).
+- O parametro p0 (%edi) e salvo em -24(%rbp) no prologo, pois %edi e
+  caller-saved e seria perdido apos um call.
+- Operacoes: operando 1 em %eax, operando 2 em %ecx, resultado de %eax
+  gravado na variavel destino (add / sub / imul).
+- call: argumento em %edi, "call rel32" para o inicio da funcao alvo
+  (os enderecos de inicio de cada funcao sao guardados num vetor) e o
+  resultado de %eax e gravado na variavel destino.
+- zret: carrega o 1o operando, cmp $0,%eax, jne pulando o bloco de
+  retorno (carrega o 2o operando em %eax; leave; ret).
+- ret: carrega o operando em %eax; leave; ret.
+- A constante CEB esta declarada em gera_codigo.c, conforme solicitado.
+
+2. O que nao esta funcionando
+-----------------------------
+Nenhum erro conhecido nos testes realizados. Nao ha tratamento de erros
+no arquivo de entrada (conforme o enunciado, a entrada e sempre correta).
+
+3. Testes realizados (todos executados com sucesso)
+---------------------------------------------------
+Compilacao: gcc -Wall -Wa,--execstack -o teste main.c gera_codigo.c
+Execucao:   ./teste arquivo.lbs argumento
+
+a) Constante
+function
+ret $100
+end
+-> argumento 0: resultado 100
+
+b) f(x) = x + 1
+function
+v0 = p0 + $1
+ret v0
+end
+-> argumento 41: resultado 42
+
+c) Fatorial
+function
+zret p0 $1
+v0 = p0 + $0
+v1 = v0 - $1
+v1 = call 0 v1
+v0 = v0 * v1
+ret v0
+end
+-> argumento 5: 120 ; argumento 10: 3628800
+
+d) Soma dos quadrados (duas funcoes, com funcao auxiliar)
+function
+v0 = p0 * p0
+ret v0
+end
+function
+zret p0 $0
+v0 = p0 - $1
+v1 = call 0 p0
+v0 = call 1 v0
+v0 = v0 + v1
+ret v0
+end
+-> argumento 4: 30 ; argumento 10: 385
+
+e) zret com constante negativa
+function
+zret p0 $-7
+ret $5
+end
+-> argumento 0: -7 ; argumento 3: 5
+
+f) Operacoes com constantes e uso de v4
+function
+v0 = $-3 * $4
+v4 = v0 - p0
+ret v4
+end
+-> argumento 2: -14
+
+Nenhuma funcao resultou em erro.
