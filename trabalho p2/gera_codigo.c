@@ -29,46 +29,101 @@ const char CEB[] = "CEB";
 
 typedef int (*funcp) (int x);
 
-unsigned char prologo[] = {0x55, 0x48, 0x89, 0xe5};
+/* Coloca o valor de um operando ($K, p0 ou vN) num registrador.
+   reg: 'a' = %eax, 'c' = %ecx
+   Devolve a nova posicao do cursor. */
+int valorOperando(unsigned char code[], int idx, char *operando, char reg) {
+    if (operando[0] == '$') {                          /* constante: mov $K, %reg */
+        int valor;
+        sscanf(operando, "$%d", &valor);
+        if (reg == 'a') code[idx] = 0xb8;
+        else            code[idx] = 0xb9;
+        idx++;
+        code[idx] = valor & 0xff;          idx++;
+        code[idx] = (valor >> 8) & 0xff;   idx++;
+        code[idx] = (valor >> 16) & 0xff;  idx++;
+        code[idx] = (valor >> 24) & 0xff;  idx++;
+    }
+    else {                                             /* p0 ou vN: mov D(%rbp), %reg */
+        unsigned char D;
+        if (operando[0] == 'p') {
+            D = 0xe8;                                  /* p0 mora em -24 */
+        } else {
+            int num;
+            sscanf(operando, "v%d", &num);
+            D = (unsigned char)(-4 * (num + 1));       /* vN mora em -4*(N+1) */
+        }
+        code[idx] = 0x8b;  idx++;
+        if (reg == 'a') code[idx] = 0x45;
+        else            code[idx] = 0x4d;
+        idx++;
+        code[idx] = D;     idx++;
+    }
+    return idx;
+}
+//unsigned char prologo[] = {0x55, 0x48, 0x89, 0xe5};
+unsigned char prologo[] = {0x55, 0x48, 0x89, 0xe5,     /* push %rbp; mov %rsp,%rbp */
+                           0x48, 0x83, 0xec, 0x20,     /* sub $32,%rsp            */
+                           0x89, 0x7d, 0xe8};          /* mov %edi,-24(%rbp)      */
+                           
 unsigned char epilogo[] = {0xc9, 0xc3};
 
 void gera_codigo(FILE *f, unsigned char code[], funcp *entry) {
     char linha[256];
     int idx_codigo = 0; // Índice que controla onde escrever o próximo byte no vetor 'code'
     
-    // Você precisará de uma forma de rastrear onde cada função começa
-    // para preencher o ponteiro entry no final e para lidar com chamadas (call).
     int inicio_funcoes[50]; //50 pq vai no maximo até 50 linhas, n que seja possivel 50 linhas com "function"
     int quantidade_funcoes = 0; // vai servir de indicie para colocar no inicio_funcoes
+
     while (fscanf(f, " %[^\n]", linha) != EOF) {
         if (strncmp(linha, "function", 8) == 0) {
-            for (int i = 0; i < 4; i++) {          /* o for do prólogo mora AQUI */
+            inicio_funcoes[quantidade_funcoes] = idx_codigo;   /* 1. anota onde esta função começa */
+            quantidade_funcoes++;
+            for (int i = 0; i < 11; i++) {          /* o for do prólogo mora AQUI */
                 code[idx_codigo] = prologo[i];
                 idx_codigo++;
             }
             // TODO: Salvar o endereço (idx_codigo) como o início de uma nova função
             // TODO: Inserir os bytes do prólogo do Assembly
+            
         } 
         else if (strncmp(linha, "end", 3) == 0) {
             // TODO: Inserir os bytes do epílogo do Assembly
         }
-        else if (strncmp(linha, "ret", 3) == 0) {
-            int valor;
-            sscanf(linha, "ret $%d", &valor);       /* tira o número */
+        else if (linha[0] == 'v') {                     /* vD = X op Y */
+            int destino;
+            char op1[20], op2[20], op;
+            sscanf(linha, "v%d = %s %c %s", &destino, op1, &op, op2);
 
-            code[idx_codigo] = 0xb8;  idx_codigo++; /* movl $___, %eax */
-            code[idx_codigo] = valor & 0xff;          idx_codigo++;
-            code[idx_codigo] = (valor >> 8) & 0xff;   idx_codigo++;
-            code[idx_codigo] = (valor >> 16) & 0xff;  idx_codigo++;
-            code[idx_codigo] = (valor >> 24) & 0xff;  idx_codigo++;
+            /* passo 1 e 2: X → %eax, Y → %ecx */
+            idx_codigo = valorOperando(code, idx_codigo, op1, 'a');
+            idx_codigo = valorOperando(code, idx_codigo, op2, 'c');
 
-            code[idx_codigo] = epilogo[0];  idx_codigo++;  /* leave */
-            code[idx_codigo] = epilogo[1];  idx_codigo++;  /* ret   */
+            /* passo 3: a conta (resultado fica em %eax) */
+            if (op == '+') {                            /* add %ecx, %eax */
+                code[idx_codigo] = 0x01;  idx_codigo++;
+                code[idx_codigo] = 0xc8;  idx_codigo++;
+            } else if (op == '-') {                     /* sub %ecx, %eax */
+                code[idx_codigo] = 0x29;  idx_codigo++;
+                code[idx_codigo] = 0xc8;  idx_codigo++;
+            } else if (op == '*') {                     /* imul %ecx, %eax */
+                code[idx_codigo] = 0x0f;  idx_codigo++;
+                code[idx_codigo] = 0xaf;  idx_codigo++;
+                code[idx_codigo] = 0xc1;  idx_codigo++;
+            }
+
+            /* passo 4: %eax → gaveta de vD */
+            code[idx_codigo] = 0x89;  idx_codigo++;     /* mov %eax, D(%rbp) */
+            code[idx_codigo] = 0x45;  idx_codigo++;
+            code[idx_codigo] = (unsigned char)(-4 * (destino + 1));  idx_codigo++;
         }
-        }
-        // TODO: Adicionar if/else para 'zret', 'call' e '='
-        
-    }
-    
-    // TODO: Atualizar *entry para apontar para o início da ÚLTIMA função registrada
+       else if (strncmp(linha, "ret", 3) == 0) {
+            char op[20];
+            sscanf(linha, "ret %s", op);                     /* op = "$100", "p0" ou "v2" */
+            idx_codigo = valorOperando(code, idx_codigo, op, 'a'); /* valor → %eax */
+            code[idx_codigo] = epilogo[0];  idx_codigo++;    /* leave */
+            code[idx_codigo] = epilogo[1];  idx_codigo++;    /* ret   */
+         }
+    }        // TODO: Atualizar *entry para apontar para o início da ÚLTIMA função registrada
+    *entry = (funcp) &code[inicio_funcoes[quantidade_funcoes - 1]];
 }
