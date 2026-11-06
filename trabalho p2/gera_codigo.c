@@ -32,12 +32,16 @@ typedef int (*funcp) (int x);
 /* Coloca o valor de um operando ($K, p0 ou vN) num registrador.
    reg: 'a' = %eax, 'c' = %ecx
    Devolve a nova posicao do cursor. */
-int valorOperando(unsigned char code[], int idx, char *operando, char reg) {
+int valorOperandoEmReg(unsigned char code[], int idx, char *operando, char reg) {
     if (operando[0] == '$') {                          /* constante: mov $K, %reg */
         int valor;
         sscanf(operando, "$%d", &valor);
-        if (reg == 'a') code[idx] = 0xb8;
-        else            code[idx] = 0xb9;
+        if (reg == 'a'){
+            code[idx] = 0xb8;
+        }
+        else {
+            code[idx] = 0xb9;
+        }           
         idx++;
         code[idx] = valor & 0xff;          idx++;
         code[idx] = (valor >> 8) & 0xff;   idx++;
@@ -48,20 +52,27 @@ int valorOperando(unsigned char code[], int idx, char *operando, char reg) {
         unsigned char D;
         if (operando[0] == 'p') {
             D = 0xe8;                                  /* p0 mora em -24 */
-        } else {
+        } 
+        else {
             int num;
             sscanf(operando, "v%d", &num);
             D = (unsigned char)(-4 * (num + 1));       /* vN mora em -4*(N+1) */
         }
         code[idx] = 0x8b;  idx++;
-        if (reg == 'a') code[idx] = 0x45;
-        else            code[idx] = 0x4d;
+        if (reg == 'a'){
+           code[idx] = 0x45;
+        } 
+        else{
+           code[idx] = 0x4d; 
+        } 
+
         idx++;
-        code[idx] = D;     idx++;
+        code[idx] = D;     
+        idx++;
     }
     return idx;
 }
-//unsigned char prologo[] = {0x55, 0x48, 0x89, 0xe5};
+
 unsigned char prologo[] = {0x55, 0x48, 0x89, 0xe5,     /* push %rbp; mov %rsp,%rbp */
                            0x48, 0x83, 0xec, 0x20,     /* sub $32,%rsp            */
                            0x89, 0x7d, 0xe8};          /* mov %edi,-24(%rbp)      */
@@ -96,8 +107,8 @@ void gera_codigo(FILE *f, unsigned char code[], funcp *entry) {
             sscanf(linha, "v%d = %s %c %s", &destino, op1, &op, op2);
 
             /* passo 1 e 2: X → %eax, Y → %ecx */
-            idx_codigo = valorOperando(code, idx_codigo, op1, 'a');
-            idx_codigo = valorOperando(code, idx_codigo, op2, 'c');
+            idx_codigo = valorOperandoEmReg(code, idx_codigo, op1, 'a');
+            idx_codigo = valorOperandoEmReg(code, idx_codigo, op2, 'c');
 
             /* passo 3: a conta (resultado fica em %eax) */
             if (op == '+') {                            /* add %ecx, %eax */
@@ -120,10 +131,11 @@ void gera_codigo(FILE *f, unsigned char code[], funcp *entry) {
        else if (strncmp(linha, "ret", 3) == 0) {
             char op[20];
             sscanf(linha, "ret %s", op);                     /* op = "$100", "p0" ou "v2" */
-            idx_codigo = valorOperando(code, idx_codigo, op, 'a'); /* valor → %eax */
+            idx_codigo = valorOperandoEmReg(code, idx_codigo, op, 'a'); /* valor → %eax */
             code[idx_codigo] = epilogo[0];  idx_codigo++;    /* leave */
             code[idx_codigo] = epilogo[1];  idx_codigo++;    /* ret   */
          }
-    }        // TODO: Atualizar *entry para apontar para o início da ÚLTIMA função registrada
+    } 
+    //falta zRet   
     *entry = (funcp) &code[inicio_funcoes[quantidade_funcoes - 1]];
 }
