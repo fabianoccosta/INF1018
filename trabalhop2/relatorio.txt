@@ -1,0 +1,138 @@
+INF1018 - Software Básico - 2026.2
+
+Trabalho G2: Gerador de código para a linguagem LBS.
+
+Integrantes:
+
+  Fabiano Carvalho Costa Júnior - 2520144 - 3WA
+
+  Gabriel Lourenço - 2520196 - 3WA
+
+1. O QUE ESTÁ FUNCIONANDO
+
+Todas as instruções da linguagem LBS:
+
+  - Ret com constante, parâmetro e variável local.
+
+  - Atribuição com +, - e *, usando constantes, p0 e v0..v4.
+
+  - Zret (retorno condicional)
+
+  - Call (incluindo recursão e chamada de funções anteriores)
+
+  - Arquivos com mais de uma função (a última é a chamada pela main).
+
+2. O QUE NÃO ESTÁ FUNCIONANDO
+
+Nenhum problema encontrado nos testes realizados.
+
+3. COMO FOI FEITO
+
+Como a linguagem LBS é limitada a poucas instruções e a no máximo 5.
+
+Variáveis, basta mapear cada tipo de instrução para um trecho fixo de
+
+Assembly. Os bytes de cada instrução foram obtidos montando o assembly.
+
+Com "gcc -c" e lendo o resultado com "objdump -d". Essa tabela está em
+
+Comentário no início do gera_codigo.c.
+
+Toda função começa com o mesmo prologo, que abre o registro de ativação.
+
+Reserva 32 bytes na pilha e guarda o parâmetro P0 (que chega em %edi).
+
+O epílogo (leave, ret) é escrito em cada ret e zret.
+
+As variáveis locais ficam na pilha, em posições fixas em relação a %rbp:
+
+v0 em -4, v1 em -8, ..., v4 em -20, e p0 em -24. Os registradores %eax,
+
+%ecx e %edi são usados apenas temporariamente para fazer as contas; o
+
+Retorno e passagem de argumento no call.
+
+Para o call, o início de cada função é anotado num vetor ao ler.
+
+"function", e o deslocamento do call é calculado a partir dele.
+
+4. TESTES REALIZADOS
+
+Os testes foram feitos de forma incremental: primeiro apenas o prologo.
+
+Com um ret de constante, depois cada nova instrução.
+
+Teste 1: ret de constante
+  function
+  ret $100
+  end
+  Entrada 7 -> resultado 100
+
+Teste 2: ret do parametro
+  function
+  ret p0
+  end
+  Entrada -42 -> resultado -42
+
+Teste 3: atribuicao (soma)
+  function
+  v0 = p0 + $1
+  ret v0
+  end
+  Entrada 7 -> resultado 8
+
+Teste 4: as tres operacoes e constante negativa
+  function
+  v0 = p0 * p0
+  v1 = v0 - $-3
+  v4 = v1 * $2
+  ret v4
+  end
+  Entrada 5 -> resultado 56
+
+Teste 5: zret
+  function
+  zret p0 $1
+  ret $5
+  end
+  Entrada 0 -> resultado 1
+  Entrada 3 -> resultado 5
+
+Teste 6: zret com variaveis
+  function
+  v0 = p0 - $2
+  v1 = p0 * $10
+  zret v0 v1
+  ret $-1
+  end
+  Entrada 2 -> resultado 20
+  Entrada 9 -> resultado -1
+
+Teste 7: fatorial (call recursivo)
+  function
+  zret p0 $1
+  v0 = p0 + $0
+  v1 = v0 - $1
+  v1 = call 0 v1
+  v0 = v0 * v1
+  ret v0
+  end
+  Entrada 0 -> resultado 1
+  Entrada 5 -> resultado 120
+  Entrada 7 -> resultado 5040
+
+Teste 8: soma dos quadrados (duas funcoes, call para funcao anterior)
+  function
+  v0 = p0 * p0
+  ret v0
+  end
+  function
+  zret p0 $0
+  v0 = p0 - $1
+  v1 = call 0 p0
+  v0 = call 1 v0
+  v0 = v0 + v1
+  ret v0
+  end
+  Entrada 3  -> resultado 14
+  Entrada 10 -> resultado 385
