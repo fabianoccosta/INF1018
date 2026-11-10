@@ -1,5 +1,12 @@
-// fabiano carvalho costa junior 2520144 3wa
-// nome_do_aluno2 matricula turma
+/*INF1018 - Software Básico - 2026.2
+
+Trabalho G2: Gerador de código para a linguagem LBS.
+
+Integrantes:
+
+  Fabiano Carvalho Costa Júnior - 2520144 - 3WA
+
+  Gabriel Lourenço - 2520196 - 3WA*/
 
 #include <stdio.h>
 #include <stdlib.h>
