@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include "gera_codigo.h"
 
-/* uso: ./teste arquivo.lbs argumento */
+// uso: ./teste arquivo.lbs argumento 
 int main(int argc, char *argv[]) {
   FILE *fp;
   unsigned char code[1024];
