@@ -16,9 +16,9 @@ Todas as instruções da linguagem LBS:
 
   - Atribuição com +, - e *, usando constantes, p0 e v0..v4.
 
-  - Zret (retorno condicional)
+  - Zret (retorno condicional).
 
-  - Call (incluindo recursão e chamada de funções anteriores)
+  - Call (incluindo recursão e chamada de funções anteriores).
 
   - Arquivos com mais de uma função (a última é a chamada pela main).
 
@@ -28,39 +28,28 @@ Nenhum problema encontrado nos testes realizados.
 
 3. COMO FOI FEITO
 
-Como a linguagem LBS é limitada a poucas instruções e a no máximo 5.
+Como a linguagem LBS é limitada a poucas instruções e a no máximo 5
+variáveis, basta mapear cada tipo de instrução para um trecho fixo de
+assembly. Os bytes de cada instrução foram obtidos montando o assembly
+com "gcc -c" e lendo o resultado com "objdump -d". Essa tabela está em
+comentário no início do gera_codigo.c.
 
-Variáveis, basta mapear cada tipo de instrução para um trecho fixo de
-
-Assembly. Os bytes de cada instrução foram obtidos montando o assembly.
-
-Com "gcc -c" e lendo o resultado com "objdump -d". Essa tabela está em
-
-Comentário no início do gera_codigo.c.
-
-Toda função começa com o mesmo prologo, que abre o registro de ativação.
-
-Reserva 32 bytes na pilha e guarda o parâmetro P0 (que chega em %edi).
-
+Toda função começa com o mesmo prólogo, que abre o registro de ativação,
+reserva 32 bytes na pilha e guarda o parâmetro p0 (que chega em %edi).
 O epílogo (leave, ret) é escrito em cada ret e zret.
 
 As variáveis locais ficam na pilha, em posições fixas em relação a %rbp:
-
 v0 em -4, v1 em -8, ..., v4 em -20, e p0 em -24. Os registradores %eax,
+%ecx e %edi são usados apenas temporariamente para fazer as contas, para
+o retorno e para a passagem de argumento no call.
 
-%ecx e %edi são usados apenas temporariamente para fazer as contas; o
-
-Retorno e passagem de argumento no call.
-
-Para o call, o início de cada função é anotado num vetor ao ler.
-
+Para o call, o início de cada função é anotado num vetor ao ler
 "function", e o deslocamento do call é calculado a partir dele.
 
 4. TESTES REALIZADOS
 
-Os testes foram feitos de forma incremental: primeiro apenas o prologo.
-
-Com um ret de constante, depois cada nova instrução.
+Os testes foram feitos de forma incremental: primeiro apenas o prólogo
+com um ret de constante, depois cada nova instrução.
 
 Teste 1: ret de constante
   function
@@ -90,7 +79,16 @@ Teste 4: as tres operacoes e constante negativa
   end
   Entrada 5 -> resultado 56
 
-Teste 5: zret
+Teste 5: operacao entre duas constantes
+  function
+  v0 = $-3 * $4
+  v4 = v0 - p0
+  ret v4
+  end
+  Entrada 5   -> resultado -17
+  Entrada -12 -> resultado 0
+
+Teste 6: zret
   function
   zret p0 $1
   ret $5
@@ -98,7 +96,15 @@ Teste 5: zret
   Entrada 0 -> resultado 1
   Entrada 3 -> resultado 5
 
-Teste 6: zret com variaveis
+Teste 7: zret retornando constante negativa
+  function
+  zret p0 $-7
+  ret $5
+  end
+  Entrada 0 -> resultado -7
+  Entrada 4 -> resultado 5
+
+Teste 8: zret com variaveis
   function
   v0 = p0 - $2
   v1 = p0 * $10
@@ -108,7 +114,7 @@ Teste 6: zret com variaveis
   Entrada 2 -> resultado 20
   Entrada 9 -> resultado -1
 
-Teste 7: fatorial (call recursivo)
+Teste 9: fatorial (call recursivo)
   function
   zret p0 $1
   v0 = p0 + $0
@@ -121,7 +127,7 @@ Teste 7: fatorial (call recursivo)
   Entrada 5 -> resultado 120
   Entrada 7 -> resultado 5040
 
-Teste 8: soma dos quadrados (duas funcoes, call para funcao anterior)
+Teste 10: soma dos quadrados (duas funcoes, call para funcao anterior)
   function
   v0 = p0 * p0
   ret v0

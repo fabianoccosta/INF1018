@@ -13,7 +13,7 @@ Integrantes:
 #include <string.h>
 #include "gera_codigo.h"
 
-// dicionario dos codigos em assembly pq se n nem lembro:
+// dicionario dos codigos em assembly porque se não nem lembro:
 // push %rbp            55
 // mov %rsp,%rbp        48 89 e5
 // sub $32,%rsp         48 83 ec 20 (sempre 32)
@@ -33,7 +33,7 @@ Integrantes:
 // call rel32           e8 R R R R (R = deslocamento)
 // leave / ret          c9 / c3
 
-// prologo completo: push %rbp / mov %rsp,%rbp / sub $32,%rsp / mov %edi,-24(%rbp)
+// prologo completo: push %rbp / mov %rsp,%rbp / sub $32,%rsp / mov %edi,-24(%rbp) Abrindo RA em 32bytes e salvando %edi na pilha
 unsigned char prologo[] = {0x55, 0x48, 0x89, 0xe5, 0x48, 0x83, 0xec, 0x20, 0x89, 0x7d, 0xe8};
 unsigned char epilogo[] = {0xc9, 0xc3};
 
